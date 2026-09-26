@@ -8,6 +8,7 @@
   <meta name="description"
     content="Premium portfolio of Anshul Arora — AI & ML student, DSA enthusiast, frontend developer. Projects, skills, community, and authentication dashboard." />
   <meta name="theme-color" content="#0b1220" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
 
   <link rel="stylesheet" href="styles.css" />
 </head>
@@ -26,11 +27,17 @@
         <li><a class="nav-link" href="#education">Education</a></li>
         <li><a class="nav-link" href="#skills">Skills</a></li>
         <li><a class="nav-link" href="#projects">Projects</a></li>
+        <li><a class="nav-link" href="#experience">Experience</a></li>
+        <li><a class="nav-link" href="#services">Services</a></li>
         <li><a class="nav-link" href="#feedback">Feedback</a></li>
         <li><a class="nav-link" href="#contact">Contact</a></li>
       </ul>
 
       <div class="nav-actions">
+        <button class="hamburger" id="menuToggle" type="button" aria-label="Open navigation menu"
+          aria-controls="navLinks" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
         <button class="icon-btn" id="themeToggle" type="button" aria-label="Toggle dark/light mode"
           title="Toggle theme">
           <span class="icon" aria-hidden="true">☾</span>
@@ -66,17 +73,17 @@
           </p>
 
           <div class="hero-ctas">
-            <a class="btn btn-primary" href="#resume" aria-label="Download resume">Download Resume</a>
+            <a class="btn btn-primary" href="#resume" id="heroResumeBtn" aria-label="Download resume">Download Resume</a>
           </div>
 
           <div class="social" aria-label="Social links">
             <a class="social-link" href="https://github.com/a08786897-beep" target="_blank" rel="noopener noreferrer"
               aria-label="GitHub">
-              <i class="fa-brands fa-github" aria-hidden="true"></i><span>GitHub</span>
+              <span class="social-symbol" aria-hidden="true">GH</span><span>GitHub</span>
             </a>
-            <a class="social-link" href="https://www.linkedin.com/in/" target="_blank" rel="noopener noreferrer"
+            <a class="social-link" href="https://www.linkedin.com/" target="_blank" rel="noopener noreferrer"
               aria-label="LinkedIn">
-              <i class="fa-brands fa-linkedin" aria-hidden="true"></i><span>LinkedIn</span>
+              <span class="social-symbol" aria-hidden="true">in</span><span>LinkedIn</span>
             </a>
             <a class="social-link" href="https://leetcode.com/u/AnshulArora28/" target="_blank"
               rel="noopener noreferrer" aria-label="LeetCode">
@@ -90,7 +97,7 @@
               <div class="stat-label">DSA Problems</div>
             </div>
             <div class="stat">
-              <div class="stat-value" data-count="18">3</div>
+              <div class="stat-value" data-stat="projects">3</div>
               <div class="stat-label">Projects</div>
             </div>
           </div>
@@ -160,7 +167,7 @@
         <div class="grid-3">
           <div class="glass-card">
             <h3 class="card-title">Education</h3>
-            <div class="timeline">
+            <div class="timeline" id="educationList">
               <div class="t-item">
                 <div class="t-dot" aria-hidden="true"></div>
                 <div class="t-body">
@@ -208,7 +215,7 @@
         </div>
 
         <div class="skills-grid">
-          <div class="skills-left">
+          <div class="skills-left" id="skillsList" aria-live="polite">
             <div class="skill">
               <div class="skill-top">
                 <span class="skill-name">C++</span>
@@ -373,6 +380,30 @@
       </div>
     </section>
 
+    <section class="section" id="experience">
+      <div class="container">
+        <div class="section-head">
+          <h2 class="section-title">Experience</h2>
+          <p class="section-desc">Selected experience and leadership.</p>
+        </div>
+        <div class="timeline" id="experienceList" aria-live="polite">
+          <p class="muted" data-loading>Loading experience…</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-alt" id="services">
+      <div class="container">
+        <div class="section-head">
+          <h2 class="section-title">Services</h2>
+          <p class="section-desc">Ways I can help bring a thoughtful digital product to life.</p>
+        </div>
+        <div class="grid-3" id="servicesList" aria-live="polite">
+          <p class="muted" data-loading>Loading services…</p>
+        </div>
+      </div>
+    </section>
+
     <!-- Achievements -->
 
     <!-- Resume -->
@@ -394,7 +425,7 @@
           <div class="glass-card">
             <h3 class="card-title">Download</h3>
             <div class="resume-actions">
-              <a class="btn btn-primary" href="#" id="downloadResumeBtn"
+              <a class="btn btn-primary" href="#" id="downloadResumeBtn" aria-disabled="true"
                 role="button" aria-label="Download resume">Download Resume (PDF)</a>
               <button class="btn btn-ghost" id="copyEmailBtn" type="button">Copy Email</button>
             </div>
@@ -409,14 +440,14 @@
       <div class="container">
         <div class="section-head">
           <h2 class="section-title">Feedback</h2>
-          <p class="section-desc">Fully functional feedback form with validation, success notifications, and local
-            storage integration.</p>
+          <p class="section-desc">Share feedback directly with the portfolio owner through the secure contact API.</p>
         </div>
 
         <div class="grid-2">
           <div class="glass-card">
             <h3 class="card-title">Send Feedback</h3>
             <form class="form" id="feedbackForm" novalidate>
+              <div class="form-status" id="feedbackStatus" role="status" aria-live="polite"></div>
               <div class="form-row">
                 <label class="label" for="fbName">Name</label>
                 <input class="input" id="fbName" name="name" placeholder="Your name" required minlength="2" />
@@ -446,10 +477,10 @@
           </div>
 
           <div class="glass-card">
-            <h3 class="card-title">Your Recent Feedback</h3>
-            <div class="muted" style="margin-bottom:12px;">Stored locally in your browser.</div>
-            <div class="history-list" id="feedbackHistory"></div>
-            <button class="btn btn-ghost" id="clearFeedbackHistory" type="button">Clear History</button>
+            <h3 class="card-title">Feedback privacy</h3>
+            <p class="muted" id="feedbackResult" role="status" aria-live="polite">
+              Feedback is sent securely to the portfolio owner.
+            </p>
           </div>
         </div>
       </div>
@@ -467,6 +498,7 @@
           <div class="glass-card">
             <h3 class="card-title">Contact Form</h3>
             <form class="form" id="contactForm" novalidate>
+              <div class="form-status" id="contactStatus" role="status" aria-live="polite"></div>
               <div class="form-row">
                 <label class="label" for="cFullName">Full Name</label>
                 <input class="input" id="cFullName" name="fullName" placeholder="Full name" required minlength="2" />
@@ -531,11 +563,11 @@
             <div class="social vertical">
               <a class="social-link" href="https://github.com/a08786897-beep" target="_blank" rel="noopener noreferrer"
                 aria-label="GitHub">
-                <i class="fa-brands fa-github" aria-hidden="true"></i><span>GitHub</span>
+                  <span class="social-symbol" aria-hidden="true">GH</span><span>GitHub</span>
               </a>
-              <a class="social-link" href="https://www.linkedin.com/in/" target="_blank" rel="noopener noreferrer"
+              <a class="social-link" href="https://www.linkedin.com/" target="_blank" rel="noopener noreferrer"
                 aria-label="LinkedIn">
-                <i class="fa-brands fa-linkedin" aria-hidden="true"></i><span>LinkedIn</span>
+                <span class="social-symbol" aria-hidden="true">in</span><span>LinkedIn</span>
               </a>
               <a class="social-link" href="https://leetcode.com/u/AnshulArora28/" target="_blank"
                 rel="noopener noreferrer" aria-label="LeetCode">
@@ -552,7 +584,7 @@
       <div class="container footer-grid">
         <div>
           <div class="footer-brand">
-            <span class="brand-mark" aria-hidden="true"></></span>
+            <span class="brand-mark" aria-hidden="true"></span>
             <span>Anshul Arora</span>
           </div>
           <p class="muted">Premium UI/UX • DSA-first • AI & ML focused</p>
@@ -564,6 +596,8 @@
             <li><a href="#about">About</a></li>
             <li><a href="#skills">Skills</a></li>
             <li><a href="#projects">Projects</a></li>
+            <li><a href="#experience">Experience</a></li>
+            <li><a href="#services">Services</a></li>
             <li><a href="#feedback">Feedback</a></li>
             <li><a href="#contact">Contact</a></li>
           </ul>
@@ -584,6 +618,8 @@
     </footer>
   </main>
 
+  <script src="js/api.js" defer></script>
+  <script src="js/app.js" defer></script>
 </body>
 
 </html>

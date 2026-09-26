@@ -1,0 +1,8 @@
+.env
+.env.*
+!.env.example
+Backend/.env
+Backend/node_modules/
+Backend/coverage/
+Backend/.DS_Store
+npm-debug.log*
