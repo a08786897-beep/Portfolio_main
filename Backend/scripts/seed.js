@@ -1,7 +1,7 @@
 require("dotenv").config({ path: require("path").join(__dirname, "..", ".env") });
 
-const mongoose = require("mongoose");
 const connectDatabase = require("../config/db");
+const disconnectDatabase = connectDatabase.disconnect;
 const Project = require("../models/Project");
 const Skill = require("../models/Skill");
 const Education = require("../models/Education");
@@ -16,6 +16,7 @@ async function seedIfEmpty(Model, records) {
 
 async function seed() {
   await connectDatabase();
+
   if (!(await Profile.exists({}))) {
     await Profile.create({
       name: "Anshul Arora",
@@ -49,11 +50,19 @@ async function seed() {
       title: "Personal Portfolio",
       description: "Responsive portfolio focused on clear presentation and accessible interactions.",
       technologies: ["HTML", "CSS", "JavaScript"],
-      githubUrl: "https://github.com/a08786897-beep/Protfolio",
-      liveDemoUrl: "https://a08786897-beep.github.io/Protfolio/",
+      githubUrl: "",
+      liveDemoUrl: "",
       category: "Web Development"
     }
   ]);
+
+  await Project.updateMany(
+    {
+      githubUrl: "https://github.com/a08786897-beep/Protfolio",
+      liveDemoUrl: "https://a08786897-beep.github.io/Protfolio/"
+    },
+    { $set: { githubUrl: "", liveDemoUrl: "" } }
+  );
 
   await seedIfEmpty(Skill, [
     { name: "C++", category: "Programming", percentage: 90, order: 1 },
@@ -75,13 +84,17 @@ async function seed() {
     { title: "Web UI Implementation", description: "Polished user interfaces translated from product ideas into usable web experiences.", order: 2 },
     { title: "Problem Solving", description: "Algorithmic thinking and data structures applied to practical software challenges.", order: 3 }
   ]);
+
+  return { seeded: true };
 }
 
-seed()
-  .catch((error) => {
-    console.error("Unable to seed portfolio data:", error.message);
-    process.exitCode = 1;
-  })
-  .finally(async () => {
-    await mongoose.disconnect();
-  });
+if (require.main === module) {
+  seed()
+    .catch((error) => {
+      console.error("Unable to seed portfolio data:", error.message);
+      process.exitCode = 1;
+    })
+    .finally(disconnectDatabase);
+}
+
+module.exports = { seed, seedIfEmpty };

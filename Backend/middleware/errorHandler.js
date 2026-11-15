@@ -3,6 +3,9 @@ module.exports = function errorHandler(error, req, res, next) {
     return next(error);
   }
 
+  if (error.type === "entity.parse.failed") {
+    return res.status(400).json({ success: false, message: "The request body must contain valid JSON." });
+  }
   if (error.name === "ValidationError" || error.name === "CastError") {
     return res.status(400).json({ success: false, message: "The submitted data is invalid." });
   }

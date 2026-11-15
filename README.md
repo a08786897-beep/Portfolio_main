@@ -1,126 +1,57 @@
 # Anshul Arora Portfolio
 
-This repository keeps the original single-page portfolio design in `index.html` and `styles.css`. Its JavaScript now loads portfolio content and sends forms to the Express API. `Backend/` contains the Node.js, Express, and MongoDB application; `admin.html` is the authenticated content-management interface.
+A responsive, single-page portfolio backed by an Express API and MongoDB. The static frontend is served by the same Node.js application as the public API.
 
 ## Requirements
 
 - Node.js 18 or newer and npm
-- MongoDB (local MongoDB or a MongoDB Atlas database)
+- MongoDB locally or a MongoDB Atlas database
 
-## Configure
+## Configure and run
 
-1. If `Backend/.env` does not exist, create it from the example:
+1. If `Backend\.env` does not exist, copy `Backend\.env.example` to `Backend\.env`. Otherwise, keep the existing file and update `MONGO_URI` in place if needed. Keep `.env` private and untracked.
+2. In PowerShell, install dependencies, optionally seed starter portfolio content, and start the API:
 
    ```powershell
-   Copy-Item Backend\.env.example Backend\.env
+   Set-Location Backend
+   npm install
+   npm run seed
+   npm start
    ```
 
-   A local `Backend/.env` already exists in this workspace. Keep it untracked, review its values locally, and update it without copying over it.
-2. Set `MONGO_URI` to your MongoDB connection string; set `JWT_SECRET` to a random secret of at least 32 characters; set `ADMIN_EMAIL` and a unique `ADMIN_PASSWORD` of at least 12 characters. Keep credentials only in `Backend/.env`.
-3. Set `CORS_ORIGINS` to the exact origins used to serve the frontend. The defaults allow the Express origin on port 5000 and VS Code Live Server on port 5502.
-4. Use a MongoDB database user with access limited to this portfolio database. Never commit `.env` or paste its values into source control.
+3. Open `http://localhost:5000`. The health endpoint is `http://localhost:5000/api/health`.
 
-The existing local `.env` contains credentials for other services as well as database settings. Rotate those credentials with their respective providers, remove values that are not needed, and keep the replacement values private. The repository ignores `Backend/.env`.
+The seed command only fills empty collections, apart from clearing known broken legacy portfolio links. Review its example project, profile, skills, education, and services before using it as production content. It does not create experience or certification records. Portfolio sections with no records show an empty state instead of fabricated entries. Add portfolio records directly to MongoDB; public API write access is limited to contact and feedback submissions.
 
-## Install and start
+For disposable local development only, `ALLOW_IN_MEMORY_DATABASE=true` permits temporary in-memory data when MongoDB is unavailable. Data is lost when the process exits; do not enable this in production.
 
-From the repository root, run these commands in a PowerShell terminal:
+To serve the frontend separately with VS Code Live Server, add its exact origin to `CORS_ORIGINS` in `Backend\.env`. The default origins are for local development.
 
-```powershell
-Set-Location Backend
-npm install
-npm run seed
-npm run create-admin
-npm start
-```
+## Tests and checks
 
-Run the automated API checks (they use isolated model stubs and do not access MongoDB):
+From `Backend`:
 
 ```powershell
-Set-Location Backend
 npm test
+npm run check
 ```
 
-The seed command adds the existing portfolio projects and skills as MongoDB records, plus starter profile, education, and service content. It only seeds an empty collection; it will not overwrite records you have already managed. Edit or remove any starter records from the admin dashboard.
+The API tests use isolated model stubs and do not write to the configured MongoDB database.
 
-Make sure your local MongoDB service is running before the seed and server commands, or use a MongoDB Atlas URI. `/api/health` returns HTTP 503 until a database connection is active.
+## Public API
 
-Open the site at `http://localhost:5000` and the dashboard at `http://localhost:5000/admin.html`. Express serves the existing root-level frontend and API from one origin. Alternatively, start VS Code Live Server on port 5502; add its exact origin to `CORS_ORIGINS` if it differs from the defaults.
+| Method | Endpoint | Purpose |
+|---|---|---|
+| GET | `/api/health` | Report server and database availability |
+| GET | `/api/portfolio` | Read profile, skills, education, experience, services, and certifications |
+| GET | `/api/projects` | Read project records |
+| POST | `/api/submissions/contact` | Validate and save a contact message |
+| POST | `/api/submissions/feedback` | Validate and save visitor feedback |
 
-The administrator credentials are read from `Backend/.env`. `npm run create-admin` creates the account, or updates its password if the email already exists. There is no public registration endpoint. Passwords are hashed with bcrypt. Admin access tokens are stored only in the current browser tab's session storage; logging out revokes existing tokens by incrementing the account's token version.
+Submission endpoints are rate-limited and validate input on the server. They save messages to MongoDB; no email-delivery service is configured.
 
-For development auto-restart, use `npm run dev` instead of `npm start`.
+## Portfolio content
 
-## Frontend/API configuration
+The public API reads the existing MongoDB collections. `npm run seed` can add starter data to empty profile, project, skill, education, and service collections. Experience and certifications are optional collections; project and profile links should use valid HTTP(S) URLs. The resume is offered only when the profile has a valid same-origin path or HTTP(S) URL. Add a verified LinkedIn URL to the profile's `socialLinks` to show that link.
 
-`js/api.js` is the one API configuration and fetch client. By default it uses the current origin's `/api` path. If the frontend is deployed separately, define `window.PORTFOLIO_API_BASE_URL` before loading `js/api.js` with the deployed API base URL (for example `https://api.example.com/api`) and allow the frontend origin in `CORS_ORIGINS`.
-
-Public projects, skills, education, experience, services, and profile details are read from MongoDB. Contact and feedback submissions are validated by both browser and server, then saved in MongoDB. A failed API request is shown as an error; the interface does not report a successful submission unless the API confirms it.
-
-## REST API
-
-All responses use JSON except successful delete responses, which return `204 No Content`.
-
-| Method | Endpoint | Access | Purpose |
-|---|---|---|---|
-| GET | `/api/health` | Public | Check that the server is connected and running |
-| GET | `/api/portfolio` | Public | Read profile, skills, education, experience, and services |
-| GET | `/api/projects` | Public | List portfolio projects |
-| POST | `/api/submissions/contact` | Public, rate-limited | Save a contact message |
-| POST | `/api/submissions/feedback` | Public, rate-limited | Save visitor feedback |
-| POST | `/api/auth/login` | Public, rate-limited | Authenticate the admin |
-| POST | `/api/auth/logout` | Admin bearer token | Revoke the current admin token version |
-| GET | `/api/admin/messages` | Admin bearer token | List contact messages |
-| PATCH / DELETE | `/api/admin/messages/:id` | Admin bearer token | Mark read or delete a message |
-| GET / DELETE | `/api/admin/feedback` / `:id` | Admin bearer token | List or delete feedback |
-| GET / PATCH | `/api/admin/profile` | Admin bearer token | Read or update profile content |
-| GET / POST | `/api/admin/projects` | Admin bearer token | List or create projects |
-| PUT / DELETE | `/api/admin/projects/:id` | Admin bearer token | Update or delete a project |
-| GET / POST | `/api/admin/skills` | Admin bearer token | List or create skills |
-| PUT / DELETE | `/api/admin/skills/:id` | Admin bearer token | Update or delete a skill |
-| GET / POST | `/api/admin/experience` | Admin bearer token | List or create experience |
-| PUT / DELETE | `/api/admin/experience/:id` | Admin bearer token | Update or delete experience |
-| GET / POST | `/api/admin/education` | Admin bearer token | List or create education |
-| PUT / DELETE | `/api/admin/education/:id` | Admin bearer token | Update or delete education |
-| GET / POST | `/api/admin/services` | Admin bearer token | List or create services |
-| PUT / DELETE | `/api/admin/services/:id` | Admin bearer token | Update or delete a service |
-
-Admin requests use `Authorization: Bearer <token>`. The dashboard handles this automatically.
-
-## Smoke-test the API
-
-With the server running, check public data:
-
-```powershell
-Invoke-RestMethod http://localhost:5000/api/health
-Invoke-RestMethod http://localhost:5000/api/projects
-Invoke-RestMethod http://localhost:5000/api/portfolio
-```
-
-Submit a contact message:
-
-```powershell
-Invoke-RestMethod -Method Post -Uri http://localhost:5000/api/submissions/contact `
-  -ContentType 'application/json' `
-  -Body '{"fullName":"Test Visitor","email":"visitor@example.com","phone":"","message":"This is a portfolio contact API test."}'
-```
-
-Submit feedback:
-
-```powershell
-Invoke-RestMethod -Method Post -Uri http://localhost:5000/api/submissions/feedback `
-  -ContentType 'application/json' `
-  -Body '{"name":"Test Visitor","subject":"Portfolio test","message":"This is a portfolio feedback API test."}'
-```
-
-Log in and list admin messages (the token is held in the dashboard after login):
-
-```powershell
-$login = Invoke-RestMethod -Method Post -Uri http://localhost:5000/api/auth/login `
-  -ContentType 'application/json' `
-  -Body ('{"email":"' + $env:PORTFOLIO_ADMIN_EMAIL + '","password":"' + $env:PORTFOLIO_ADMIN_PASSWORD + '"}')
-$headers = @{ Authorization = "Bearer $($login.data.token)" }
-Invoke-RestMethod -Headers $headers http://localhost:5000/api/admin/messages
-```
-
-Set `PORTFOLIO_ADMIN_EMAIL` and `PORTFOLIO_ADMIN_PASSWORD` in the PowerShell session before running that example; do not place credentials in source files or commit terminal transcripts. The dashboard is the recommended login path.
+If the frontend and API are deployed on different origins, define `window.PORTFOLIO_API_BASE_URL` before loading `js/api.js` and allow the frontend's exact origin in `CORS_ORIGINS`.

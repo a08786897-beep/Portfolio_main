@@ -4,6 +4,7 @@ const Experience = require("../models/Experience");
 const Education = require("../models/Education");
 const Service = require("../models/Service");
 const Profile = require("../models/Profile");
+const Certification = require("../models/Certification");
 const asyncHandler = require("../utils/asyncHandler");
 
 exports.getProjects = asyncHandler(async (req, res) => {
@@ -12,12 +13,13 @@ exports.getProjects = asyncHandler(async (req, res) => {
 });
 
 exports.getPortfolio = asyncHandler(async (req, res) => {
-  const [profile, skills, experience, education, services] = await Promise.all([
+  const [profile, skills, experience, education, services, certifications] = await Promise.all([
     Profile.findOne().lean(),
     Skill.find().sort({ order: 1, createdAt: 1 }).lean(),
     Experience.find().sort({ order: 1, createdAt: -1 }).lean(),
     Education.find().sort({ order: 1, createdAt: -1 }).lean(),
-    Service.find().sort({ order: 1, createdAt: 1 }).lean()
+    Service.find().sort({ order: 1, createdAt: 1 }).lean(),
+    Certification.find().sort({ order: 1, createdAt: -1 }).lean()
   ]);
-  res.json({ success: true, data: { profile, skills, experience, education, services } });
+  res.json({ success: true, data: { profile, skills, experience, education, services, certifications } });
 });

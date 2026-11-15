@@ -16,23 +16,34 @@
   }
 
   function safeLink(url, label, className) {
-    if (!url) return null;
-    try {
-      const parsed = new URL(url);
-      if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return null;
-    } catch {
-      return null;
-    }
+    const safeUrl = safeWebUrl(url);
+    if (!safeUrl) return null;
     const link = make("a", className, label);
-    link.href = url;
+    link.href = safeUrl;
     link.target = "_blank";
     link.rel = "noopener noreferrer";
     return link;
   }
 
+  function safeWebUrl(value, allowRelative = false) {
+    if (typeof value !== "string" || !value.trim()) return null;
+    try {
+      const parsed = new URL(value, window.location.origin);
+      if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return null;
+      if (allowRelative && !/^[a-z][a-z\d+.-]*:/i.test(value) && parsed.origin === window.location.origin) {
+        return value;
+      }
+      return /^[a-z][a-z\d+.-]*:/i.test(value) ? parsed.href : null;
+    } catch {
+      return null;
+    }
+  }
+
   function renderProjects(projects) {
     const grid = $("#projectsGrid");
     grid.replaceChildren();
+    const projectStat = $('[data-stat="projects"]');
+    if (projectStat) projectStat.textContent = String(projects.length);
     if (!projects.length) {
       showMessage(grid, "Projects will appear here once they have been added.");
       return;
@@ -41,11 +52,17 @@
     projects.forEach((project) => {
       const card = make("article", "glass-card project-card");
       const media = make("div", "project-media");
-      if (project.image) {
+      const imageUrl = safeWebUrl(project.image, true);
+      if (imageUrl) {
         const image = make("img", "project-image");
-        image.src = project.image;
         image.alt = `${project.title} preview`;
         image.loading = "lazy";
+        image.addEventListener("error", () => {
+          if (image.parentNode === media) {
+            image.replaceWith(make("div", "media-placeholder", project.title));
+          }
+        }, { once: true });
+        image.src = imageUrl;
         media.append(image);
       } else {
         media.append(make("div", "media-placeholder", project.title));
@@ -64,13 +81,11 @@
       const demo = safeLink(project.liveDemoUrl, "Live Demo", "btn btn-primary");
       if (github) actions.append(github);
       if (demo) actions.append(demo);
-      body.append(actions);
+      if (actions.childElementCount) body.append(actions);
       card.append(media, body);
       grid.append(card);
     });
 
-    const projectStat = $('[data-stat="projects"]');
-    if (projectStat) projectStat.textContent = String(projects.length);
   }
 
   function renderSkills(skills) {
@@ -139,6 +154,26 @@
     });
   }
 
+  function renderCertifications(certifications) {
+    const list = $("#certificationsList");
+    if (!list) return;
+    list.replaceChildren();
+    if (!certifications.length) {
+      showMessage(list, "No certifications have been added yet.");
+      return;
+    }
+
+    certifications.forEach((certification) => {
+      const card = make("article", "glass-card");
+      card.append(make("h3", "card-title", certification.name));
+      if (certification.issuer) card.append(make("p", "muted", certification.issuer));
+      if (certification.issueDate) card.append(make("p", "muted", certification.issueDate));
+      const credential = safeLink(certification.credentialUrl, "View credential", "btn btn-ghost");
+      if (credential) card.append(credential);
+      list.append(card);
+    });
+  }
+
   function applyProfile(profile) {
     if (!profile) return;
     if (profile.name) {
@@ -180,9 +215,47 @@
       if (location) location.textContent = profile.location;
     }
     if (profile.resumeUrl) {
-      $("#downloadResumeBtn")?.setAttribute("href", profile.resumeUrl);
-      $("#downloadResumeBtn")?.removeAttribute("aria-disabled");
-      $("#heroResumeBtn")?.setAttribute("href", profile.resumeUrl);
+      const resumeUrl = safeWebUrl(profile.resumeUrl, true);
+      const download = $("#downloadResumeBtn");
+      const heroResume = $("#heroResumeBtn");
+      const preview = $(".resume-file");
+      if (resumeUrl && download) {
+        [download, heroResume].filter(Boolean).forEach((link) => {
+          link.href = resumeUrl;
+          link.removeAttribute("aria-disabled");
+          link.removeAttribute("tabindex");
+          if (new URL(resumeUrl, window.location.origin).origin === window.location.origin) {
+            link.setAttribute("download", "");
+          } else {
+            link.removeAttribute("download");
+            link.target = "_blank";
+            link.rel = "noopener noreferrer";
+          }
+        });
+        download.textContent = "Download Resume (PDF)";
+        download.setAttribute("aria-label", "Download resume");
+        if (heroResume) {
+          heroResume.textContent = "Download Resume";
+          heroResume.setAttribute("aria-label", "Download resume");
+        }
+        if (preview) preview.textContent = "Resume ready to download";
+      }
+    }
+    if (Array.isArray(profile.socialLinks)) {
+      const links = new Map(profile.socialLinks.map((item) => [
+        String(item.label || "").trim().toLowerCase(),
+        item.url
+      ]));
+      $$("[data-social]").forEach((link) => {
+        const label = link.dataset.social;
+        const configuredUrl = links.get(label);
+        const safeUrl = configuredUrl ? safeWebUrl(configuredUrl) : null;
+        if (safeUrl) {
+          link.href = safeUrl;
+          link.hidden = false;
+        }
+        else if (label === "linkedin" || configuredUrl) link.hidden = true;
+      });
     }
   }
 
@@ -195,8 +268,9 @@
       renderTimeline($("#educationList"), data.education, "degree", "institution");
       renderTimeline($("#experienceList"), data.experience, "title", "company");
       renderServices(data.services);
+      renderCertifications(data.certifications || []);
     } catch (error) {
-      ["#skillsList", "#educationList", "#experienceList", "#servicesList"].forEach((selector) => {
+      ["#skillsList", "#educationList", "#experienceList", "#servicesList", "#certificationsList"].forEach((selector) => {
         showMessage($(selector), error.message, "field-error");
       });
     }
@@ -226,12 +300,13 @@
     const button = $("#themeToggle");
     const savedTheme = localStorage.getItem("portfolioTheme");
     if (savedTheme === "light") document.documentElement.dataset.theme = "light";
+    const icon = button?.querySelector(".icon");
+    if (icon) icon.textContent = savedTheme === "light" ? "☀" : "☾";
     button?.addEventListener("click", () => {
       const nextTheme = document.documentElement.dataset.theme === "light" ? "dark" : "light";
       if (nextTheme === "light") document.documentElement.dataset.theme = "light";
       else document.documentElement.removeAttribute("data-theme");
       localStorage.setItem("portfolioTheme", nextTheme);
-      const icon = button.querySelector(".icon");
       if (icon) icon.textContent = nextTheme === "light" ? "☀" : "☾";
     });
   }
@@ -314,20 +389,15 @@
   }
 
   function configureResumeAndCopy() {
-    $("#downloadResumeBtn")?.addEventListener("click", (event) => {
-      if (event.currentTarget.getAttribute("aria-disabled") === "true") {
-        event.preventDefault();
-        showMessage(event.currentTarget.closest(".glass-card"), "A resume file has not been added yet.");
-      }
-    });
     $("#copyEmailBtn")?.addEventListener("click", async (event) => {
-      const email = event.currentTarget.dataset.email || $(".contact-details a[href^='mailto:']")?.textContent;
+      const button = event.currentTarget;
+      const email = button.dataset.email || $(".contact-details a[href^='mailto:']")?.textContent;
       if (!email) return;
       try {
         await navigator.clipboard.writeText(email);
-        showMessage(event.currentTarget.closest(".glass-card"), "Email address copied.", "success-message");
+        showMessage($("#copyEmailStatus"), "Email address copied.", "success-message");
       } catch {
-        showMessage(event.currentTarget.closest(".glass-card"), "Clipboard access is unavailable in this browser.");
+        showMessage($("#copyEmailStatus"), "Clipboard access is unavailable in this browser.");
       }
     });
   }
