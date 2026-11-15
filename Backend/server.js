@@ -1,6 +1,7 @@
-require("dotenv").config({ path: require("path").join(__dirname, ".env") });
-
 const path = require("path");
+require("dotenv").config({ path: path.join(__dirname, ".env") });
+require("dotenv").config({ path: path.join(__dirname, "..", ".env") });
+
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
@@ -22,6 +23,7 @@ const allowedOrigins = (process.env.CORS_ORIGINS ||
   .filter(Boolean);
 
 app.disable("x-powered-by");
+app.set("trust proxy", 1);
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -31,7 +33,7 @@ app.use(helmet({
 }));
 app.use(cors({
   origin(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes("*")) return callback(null, true);
     const error = new Error("This origin is not allowed by the CORS policy.");
     error.status = 403;
     return callback(error);
@@ -64,6 +66,7 @@ app.get("/", (req, res) => res.sendFile(path.join(rootDirectory, "index.html")))
 app.get("/index.html", (req, res) => res.sendFile(path.join(rootDirectory, "index.html")));
 app.get("/styles.css", (req, res) => res.sendFile(path.join(rootDirectory, "styles.css")));
 app.get("/favicon.svg", (req, res) => res.sendFile(path.join(rootDirectory, "favicon.svg")));
+app.get("/favicon.ico", (req, res) => res.sendFile(path.join(rootDirectory, "favicon.svg")));
 app.use("/js", express.static(path.join(rootDirectory, "js"), { dotfiles: "deny", fallthrough: false }));
 app.use("/assets", express.static(path.join(rootDirectory, "assets"), { dotfiles: "deny" }));
 

@@ -1,5 +1,6 @@
 (function () {
-  const configuredBaseUrl = (window.PORTFOLIO_API_BASE_URL || window.location.origin).replace(/\/+$/, "");
+  const metaBaseUrl = document.querySelector('meta[name="portfolio-api-base-url"]')?.content?.trim();
+  const configuredBaseUrl = (window.PORTFOLIO_API_BASE_URL || metaBaseUrl || window.location.origin).replace(/\/+$/, "");
   const apiBaseUrl = configuredBaseUrl.endsWith("/api") ? configuredBaseUrl : `${configuredBaseUrl}/api`;
 
   async function request(path, options = {}) {

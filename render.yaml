@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: anshul-portfolio
+    env: node
+    plan: free
+    buildCommand: npm install --prefix Backend
+    startCommand: node Backend/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false

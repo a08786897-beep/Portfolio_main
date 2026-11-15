@@ -1,0 +1,16 @@
+{
+  "name": "anshul-portfolio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Full-Stack Personal Portfolio Website",
+  "main": "Backend/server.js",
+  "scripts": {
+    "start": "node Backend/server.js",
+    "postinstall": "npm install --prefix Backend",
+    "test": "npm test --prefix Backend",
+    "check": "npm run check --prefix Backend"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
